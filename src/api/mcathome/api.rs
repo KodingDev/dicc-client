@@ -1,9 +1,11 @@
+use reqwest::Error;
+
 use crate::{
     api::mcathome::platforms::PlatformListResponse,
     data::download::{Checksum, Download},
     manager::platform::Platform,
 };
-use reqwest::Error;
+use crate::api::mcathome::projects::{GetProjectsForPlatformsRequest, GetProjectsForPlatformsResponse};
 
 pub struct MCAtHomeAPI {
     client: reqwest::Client,
@@ -51,5 +53,24 @@ impl MCAtHomeAPI {
             platforms.push(platform);
         }
         Ok(platforms)
+    }
+
+    pub async fn get_projects_for_platforms(&self, platforms: Vec<String>) -> Result<GetProjectsForPlatformsResponse, Error> {
+        let url = format!("{}/projects/compatible", MCAtHomeAPI::BASE_URL);
+        let body = GetProjectsForPlatformsRequest {
+            platform_ids: platforms.iter().map(|p| p.parse::<i32>().unwrap()).collect(),
+        };
+
+        Ok(
+            self
+                .client
+                .post(&url)
+                .header("Authorization", self.api_key.to_string())
+                .json(&body)
+                .send()
+                .await?
+                .json::<GetProjectsForPlatformsResponse>()
+                .await?
+        )
     }
 }

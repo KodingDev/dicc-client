@@ -12,9 +12,9 @@ use crate::data::download::Download;
 
 #[derive(Debug)]
 pub struct Platform {
-    id: String,
-    name: String,
-    detector: Download,
+    pub id: String,
+    pub name: String,
+    pub detector: Download,
 }
 
 impl Platform {
@@ -69,9 +69,7 @@ impl PlatformManager {
                 .await
                 .expect("failed to download platform");
 
-            #[cfg(not(target_os = "windows"))]
             set_permissions(&path).await;
-
             if platform.detect(&path).await.unwrap() {
                 platforms.push(platform);
                 info!("{}: {}", platform.name, "<green>OK</>");
@@ -83,9 +81,11 @@ impl PlatformManager {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
 pub async fn set_permissions(path: &Path) {
-    use std::os::unix::fs::PermissionsExt;
-    let perms = Permissions::from_mode(0o755);
-    fs::set_permissions(path, perms).await.expect("failed to set permissions");
+    #[cfg(not(target_os = "windows"))]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let perms = Permissions::from_mode(0o755);
+        fs::set_permissions(path, perms).await.expect("failed to set permissions");
+    }
 }
