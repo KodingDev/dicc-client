@@ -48,7 +48,7 @@ jobs:
     runs-on: ${{ matrix.OS }}
     env:
       NAME: dicc-client
-      TARGET: ${{ matrix.TARGET }}``
+      TARGET: ${{ matrix.TARGET }}
       OS: ${{ matrix.OS }}
     steps:
       - uses: actions/checkout@v2
