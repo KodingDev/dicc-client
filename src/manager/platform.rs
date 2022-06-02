@@ -1,5 +1,8 @@
+#[cfg(not(target_os = "windows"))]
+use std::fs::Permissions;
+use std::path::Path;
+
 use simplelog::info;
-use std::{fs::Permissions, path::Path};
 use tokio::{
     fs::{self},
     process::Command,
@@ -24,8 +27,12 @@ impl Platform {
     }
 
     pub async fn detect(&self, path: &Path) -> Result<bool, Box<dyn std::error::Error>> {
-        let status = Command::new(&path).output().await?.status.code().unwrap();
-        Ok(status == 0)
+        let result = Command::new(&path).output().await;
+        if result.is_err() {
+            return Ok(false);
+        }
+
+        Ok(result.unwrap().status.code() == Some(0))
     }
 }
 
