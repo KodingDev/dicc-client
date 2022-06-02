@@ -3,7 +3,7 @@ use std::path::Path;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use tokio::{
-    fs::{File},
+    fs::File,
     io::{self, AsyncReadExt},
 };
 
@@ -55,6 +55,11 @@ impl Download {
             }
         }
         false
+    }
+
+    pub fn get_filename(&self) -> String {
+        let mut url = self.url.clone();
+        url.split_off(url.rfind('/').unwrap() + 1)
     }
 
     pub async fn download(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
