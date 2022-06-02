@@ -3,7 +3,7 @@ use std::path::Path;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use tokio::{
-    fs::{self, File},
+    fs::{File},
     io::{self, AsyncReadExt},
 };
 
