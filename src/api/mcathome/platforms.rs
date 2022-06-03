@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+use crate::data::download::{Checksum, Download};
+
 #[derive(Debug, Deserialize)]
 pub struct PlatformInfo {
     pub id: i32,
@@ -16,6 +18,15 @@ pub struct BinaryInfo {
 
     #[serde(rename = "downloadURL")]
     pub download_url: String,
+}
+
+impl BinaryInfo {
+    pub fn as_download(&self) -> Download {
+        Download::new(
+            self.download_url.as_str(),
+            vec![Checksum::new("sha256", self.checksum.as_str())],
+        )
+    }
 }
 
 pub type PlatformListResponse = Vec<PlatformInfo>;

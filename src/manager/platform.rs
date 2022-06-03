@@ -1,6 +1,6 @@
 #[cfg(not(target_os = "windows"))]
 use std::fs::Permissions;
-use std::path::Path;
+use std::{path::Path, collections::HashMap};
 
 use simplelog::info;
 use tokio::{
@@ -10,7 +10,7 @@ use tokio::{
 
 use crate::data::download::Download;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Platform {
     pub id: String,
     pub name: String,
@@ -63,7 +63,7 @@ impl PlatformManager {
         self.platforms.push(platform);
     }
 
-    pub async fn detect(&self) -> Vec<&Platform> {
+    pub async fn detect(&self) -> HashMap<String, Platform> {
         let dir = Path::new("platforms");
         if !dir.exists() {
             fs::create_dir_all(dir)
@@ -71,7 +71,7 @@ impl PlatformManager {
                 .expect("failed to create platforms directory");
         }
 
-        let mut platforms: Vec<&Platform> = Vec::new();
+        let mut platforms: HashMap<String, Platform> = HashMap::new();
         for platform in &self.platforms {
             let path = dir.join(format!("{}.bin", platform.id));
 
@@ -83,7 +83,7 @@ impl PlatformManager {
 
             set_permissions(&path).await;
             if platform.detect(&path).await.unwrap() {
-                platforms.push(platform);
+                platforms.insert(platform.id.as_str().to_string(), platform.to_owned());
                 info!("{}: {}", platform.name, "<green>OK</>");
             } else {
                 info!("{}: {}", platform.name, "<red>FAILED</>");

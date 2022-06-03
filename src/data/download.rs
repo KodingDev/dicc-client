@@ -7,13 +7,13 @@ use tokio::{
     io::{self, AsyncReadExt},
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Download {
     url: String,
     checksums: Vec<Checksum>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Checksum {
     algorithm: String,
     value: String,

@@ -1,11 +1,16 @@
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+
 use reqwest::Error;
 
+use crate::api::mcathome::projects::{
+    GetProjectsForPlatformsRequest, GetProjectsForPlatformsResponse,
+};
+use crate::data::project::{Project, ProjectPlatform};
 use crate::{
     api::mcathome::platforms::PlatformListResponse,
-    data::download::{Checksum, Download},
     manager::platform::Platform,
 };
-use crate::api::mcathome::projects::{GetProjectsForPlatformsRequest, GetProjectsForPlatformsResponse};
 
 pub struct MCAtHomeAPI {
     client: reqwest::Client,
@@ -35,19 +40,10 @@ impl MCAtHomeAPI {
 
         let mut platforms: Vec<Platform> = Vec::new();
         for platform in resp {
-            let download = Download::new(
-                platform.detector_binary.download_url.as_str(),
-                vec![Checksum::new(
-                    "sha256",
-                    platform.detector_binary.checksum.as_str(),
-                )],
-            );
-
-
             let platform = Platform::new(
                 format!("{}", platform.id).as_str(),
                 platform.name.as_str(),
-                download,
+                platform.detector_binary.as_download(),
             );
 
             platforms.push(platform);
@@ -55,22 +51,47 @@ impl MCAtHomeAPI {
         Ok(platforms)
     }
 
-    pub async fn get_projects_for_platforms(&self, platforms: Vec<String>) -> Result<GetProjectsForPlatformsResponse, Error> {
-        let url = format!("{}/projects/compatible", MCAtHomeAPI::BASE_URL);
-        let body = GetProjectsForPlatformsRequest {
-            platform_ids: platforms.iter().map(|p| p.parse::<i32>().unwrap()).collect(),
-        };
+    pub async fn get_projects_for_platforms(
+        &self,
+        platforms: HashMap<String, Platform>,
+    ) -> Result<Vec<Project>, Error> {
+        let platform_ids = platforms
+            .iter()
+            .map(|(_, p)| p.id.parse::<i32>().unwrap())
+            .collect::<Vec<i32>>();
 
-        Ok(
-            self
-                .client
-                .post(&url)
-                .header("Authorization", self.api_key.to_string())
-                .json(&body)
-                .send()
-                .await?
-                .json::<GetProjectsForPlatformsResponse>()
-                .await?
-        )
+        let url = format!("{}/projects/compatible", MCAtHomeAPI::BASE_URL);
+        let body = GetProjectsForPlatformsRequest { platform_ids };
+
+        let response = self
+            .client
+            .post(&url)
+            .header("Authorization", self.api_key.to_string())
+            .json(&body)
+            .send()
+            .await?
+            .json::<GetProjectsForPlatformsResponse>()
+            .await?;
+
+        let mut projects: HashMap<i32, Project> = HashMap::new();
+        for binary in response.project_binaries {
+            let project = match projects.entry(binary.project.id) {
+                Entry::Occupied(entry) => entry.into_mut(),
+                Entry::Vacant(entry) => {
+                    entry.insert(Project::new(binary.project.id, &binary.project.name))
+                }
+            };
+
+            let platform = platforms
+                .get(&binary.platform_id.to_string())
+                .expect("Platform not found");
+
+            project.add_platform(ProjectPlatform::new(
+                platform.clone(),
+                binary.binary.as_download(),
+                binary.priority,
+            ));
+        }
+        Ok(projects.into_iter().map(|(_, v)| v).collect())
     }
 }
