@@ -56,12 +56,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let projects = api.get_projects_for_platforms(valid).await?;
     info!("<green><bold>Found {} project(s) in {}ms.</>", projects.len(), ts.elapsed().as_millis());
 
-    for project in projects {
+    for project in &projects {
         info!("<bold>{} - {}</>", project.id, project.name);
-        for platform in project.platforms {
+        for platform in &project.platforms {
             info!(" - <bright-black>{}</>", platform.platform.name);
         }
     }
+
+    ts = Instant::now();
+    info!("<green><bold>Assigning tasks...</>");
+    let assignments = api.get_assignments(&projects).await?;
+    info!("<green><bold>Assigned {} task(s) in {}ms.</>", assignments.len(), ts.elapsed().as_millis());
+
+    println!("{:#?}", assignments);
 
     Ok(())
 }

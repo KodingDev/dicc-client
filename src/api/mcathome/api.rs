@@ -7,6 +7,7 @@ use crate::{
     api::mcathome::platforms::PlatformListResponse,
     manager::platform::Platform,
 };
+use crate::api::mcathome::assignments::{AssignmentInfo, RetrieveTaskOfProjectsRequest, RetrieveTaskOfProjectsResponse};
 use crate::api::mcathome::projects::{
     GetProjectsForPlatformsRequest, GetProjectsForPlatformsResponse,
 };
@@ -96,5 +97,27 @@ impl MCAtHomeAPI {
         let mut projects: Vec<Project> = projects.into_iter().map(|(_, v)| v).collect();
         projects.sort_by(|a, b| a.id.cmp(&b.id));
         Ok(projects)
+    }
+
+    pub async fn get_assignments(&self, projects: &Vec<Project>) -> Result<Vec<AssignmentInfo>, Error> {
+        let project_ids = projects
+            .iter()
+            .map(|p| p.id)
+            .collect::<Vec<i32>>();
+
+        let url = format!("{}/feeder/ofprojects", MCAtHomeAPI::BASE_URL);
+        let body = RetrieveTaskOfProjectsRequest { task_count: 1, project_ids };
+
+        let resp = self
+            .client
+            .post(&url)
+            .header("Authorization", self.api_key.to_string())
+            .json(&body)
+            .send()
+            .await?
+            .json::<RetrieveTaskOfProjectsResponse>()
+            .await?;
+
+        Ok(resp.assignments)
     }
 }
