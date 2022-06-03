@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize)]
 pub struct RetrieveTaskOfProjectsRequest {
     #[serde(rename = "acceptedProjectsIDs")]
-    pub project_ids: Vec<i32>,
+    pub project_ids: Vec<i64>,
 
     #[serde(rename = "taskCount")]
     pub task_count: i32,

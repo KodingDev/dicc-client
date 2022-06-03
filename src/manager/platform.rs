@@ -1,6 +1,6 @@
+use std::{collections::HashMap, path::Path};
 #[cfg(not(target_os = "windows"))]
 use std::fs::Permissions;
-use std::{path::Path, collections::HashMap};
 
 use simplelog::info;
 use tokio::{

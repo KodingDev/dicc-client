@@ -11,6 +11,7 @@ use crate::api::mcathome::assignments::{AssignmentInfo, RetrieveTaskOfProjectsRe
 use crate::api::mcathome::projects::{
     GetProjectsForPlatformsRequest, GetProjectsForPlatformsResponse,
 };
+use crate::data::assignment::Assignment;
 use crate::data::project::{Project, ProjectPlatform};
 
 pub struct MCAtHomeAPI {
@@ -99,11 +100,11 @@ impl MCAtHomeAPI {
         Ok(projects)
     }
 
-    pub async fn get_assignments(&self, projects: &Vec<Project>) -> Result<Vec<AssignmentInfo>, Error> {
+    pub async fn get_assignments(&self, projects: &Vec<Project>) -> Result<Vec<Assignment>, Error> {
         let project_ids = projects
             .iter()
             .map(|p| p.id)
-            .collect::<Vec<i32>>();
+            .collect::<Vec<i64>>();
 
         let url = format!("{}/feeder/ofprojects", MCAtHomeAPI::BASE_URL);
         let body = RetrieveTaskOfProjectsRequest { task_count: 1, project_ids };
@@ -118,6 +119,19 @@ impl MCAtHomeAPI {
             .json::<RetrieveTaskOfProjectsResponse>()
             .await?;
 
-        Ok(resp.assignments)
+        let assignments = resp
+            .assignments
+            .into_iter()
+            .map(|assignment| {
+                let project = projects
+                    .iter()
+                    .find(|p| p.id == assignment.task.project_id)
+                    .expect("Project not found");
+
+                Assignment::new(assignment.id, project.to_owned(), assignment.task.input_data)
+            })
+            .collect::<Vec<Assignment>>();
+
+        Ok(assignments)
     }
 }
