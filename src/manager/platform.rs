@@ -93,6 +93,7 @@ impl PlatformManager {
     }
 }
 
+#[allow(unused_variables)]
 pub async fn set_permissions(path: &Path) {
     #[cfg(not(target_os = "windows"))]
     {

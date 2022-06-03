@@ -3,14 +3,14 @@ use std::collections::HashMap;
 
 use reqwest::Error;
 
-use crate::api::mcathome::projects::{
-    GetProjectsForPlatformsRequest, GetProjectsForPlatformsResponse,
-};
-use crate::data::project::{Project, ProjectPlatform};
 use crate::{
     api::mcathome::platforms::PlatformListResponse,
     manager::platform::Platform,
 };
+use crate::api::mcathome::projects::{
+    GetProjectsForPlatformsRequest, GetProjectsForPlatformsResponse,
+};
+use crate::data::project::{Project, ProjectPlatform};
 
 pub struct MCAtHomeAPI {
     client: reqwest::Client,
@@ -92,6 +92,9 @@ impl MCAtHomeAPI {
                 binary.priority,
             ));
         }
-        Ok(projects.into_iter().map(|(_, v)| v).collect())
+
+        let mut projects: Vec<Project> = projects.into_iter().map(|(_, v)| v).collect();
+        projects.sort_by(|a, b| a.id.cmp(&b.id));
+        Ok(projects)
     }
 }

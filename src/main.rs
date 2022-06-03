@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("<green><bold>Found {} project(s) in {}ms.</>", projects.len(), ts.elapsed().as_millis());
 
     for project in projects {
-        info!("<bold>{}</>", project.name);
+        info!("<bold>{} - {}</>", project.id, project.name);
         for platform in project.platforms {
             info!(" - <bright-black>{}</>", platform.platform.name);
         }
