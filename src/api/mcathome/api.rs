@@ -7,7 +7,7 @@ use crate::{
     api::mcathome::platforms::PlatformListResponse,
     manager::platform::Platform,
 };
-use crate::api::mcathome::assignments::{AssignmentInfo, RetrieveTaskOfProjectsRequest, RetrieveTaskOfProjectsResponse};
+use crate::api::mcathome::assignments::{RetrieveTaskOfProjectsRequest, RetrieveTaskOfProjectsResponse};
 use crate::api::mcathome::projects::{
     GetProjectsForPlatformsRequest, GetProjectsForPlatformsResponse,
 };
@@ -75,7 +75,7 @@ impl MCAtHomeAPI {
             .json::<GetProjectsForPlatformsResponse>()
             .await?;
 
-        let mut projects: HashMap<i32, Project> = HashMap::new();
+        let mut projects: HashMap<i64, Project> = HashMap::new();
         for binary in response.project_binaries {
             let project = match projects.entry(binary.project.id) {
                 Entry::Occupied(entry) => entry.into_mut(),

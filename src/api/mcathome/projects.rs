@@ -31,6 +31,6 @@ pub struct ProjectBinary {
 
 #[derive(Debug, Deserialize)]
 pub struct ProjectInfo {
-    pub id: i32,
+    pub id: i64,
     pub name: String,
 }
