@@ -4,7 +4,7 @@ use crate::data::download::{Checksum, Download};
 
 #[derive(Debug, Deserialize)]
 pub struct PlatformInfo {
-    pub id: i32,
+    pub id: i64,
     pub name: String,
 
     #[serde(rename = "detectorBinary")]

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::manager::platform::Platform;
 
 use super::download::Download;
@@ -6,7 +7,7 @@ use super::download::Download;
 pub struct Project {
     pub id: i64,
     pub name: String,
-    pub platforms: Vec<ProjectPlatform>,
+    pub platforms: HashMap<i64, ProjectPlatform>,
 }
 
 #[derive(Debug, Clone)]
@@ -21,12 +22,12 @@ impl Project {
         Project {
             id,
             name: name.to_string(),
-            platforms: Vec::new(),
+            platforms: HashMap::new(),
         }
     }
 
     pub fn add_platform(&mut self, platform: ProjectPlatform) {
-        self.platforms.push(platform);
+        self.platforms.insert(platform.platform.id, platform);
     }
 }
 

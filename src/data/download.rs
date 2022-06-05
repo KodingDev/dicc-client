@@ -58,7 +58,7 @@ impl Download {
         false
     }
 
-    fn get_filename(&self) -> String {
+    pub fn get_filename(&self) -> String {
         let mut url = self.url.clone();
         url.split_off(url.rfind('/').unwrap() + 1)
     }

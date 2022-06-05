@@ -11,15 +11,15 @@ use crate::data::download::Download;
 
 #[derive(Debug, Clone)]
 pub struct Platform {
-    pub id: String,
+    pub id: i64,
     pub name: String,
     pub detector: Download,
 }
 
 impl Platform {
-    pub fn new(id: &str, name: &str, detector: Download) -> Platform {
+    pub fn new(id: i64, name: &str, detector: Download) -> Platform {
         Platform {
-            id: id.to_string(),
+            id,
             name: name.to_string(),
             detector,
         }
@@ -50,7 +50,7 @@ impl PlatformManager {
         self.platforms.push(platform);
     }
 
-    pub async fn detect(&self) -> HashMap<String, Platform> {
+    pub async fn detect(&self) -> HashMap<i64, Platform> {
         let dir = Path::new("platforms");
         if !dir.exists() {
             fs::create_dir_all(dir)
@@ -58,7 +58,7 @@ impl PlatformManager {
                 .expect("failed to create platforms directory");
         }
 
-        let mut platforms: HashMap<String, Platform> = HashMap::new();
+        let mut platforms: HashMap<i64, Platform> = HashMap::new();
         for platform in &self.platforms {
             let path = dir.join(format!("{}.bin", platform.id));
 
@@ -70,7 +70,7 @@ impl PlatformManager {
 
             set_permissions(&path).await;
             if platform.detect(&path).await.unwrap() {
-                platforms.insert(platform.id.as_str().to_string(), platform.to_owned());
+                platforms.insert(platform.id, platform.to_owned());
                 info!("{}: {}", platform.name, "<green>OK</>");
             } else {
                 info!("{}: {}", platform.name, "<red>FAILED</>");

@@ -43,7 +43,7 @@ impl MCAtHomeAPI {
         let mut platforms: Vec<Platform> = Vec::new();
         for platform in resp {
             let platform = Platform::new(
-                format!("{}", platform.id).as_str(),
+                platform.id,
                 platform.name.as_str(),
                 platform.detector_binary.as_download(),
             );
@@ -55,12 +55,12 @@ impl MCAtHomeAPI {
 
     pub async fn get_projects_for_platforms(
         &self,
-        platforms: HashMap<String, Platform>,
+        platforms: &HashMap<i64, Platform>,
     ) -> Result<Vec<Project>, Error> {
         let platform_ids = platforms
             .iter()
-            .map(|(_, p)| p.id.parse::<i32>().unwrap())
-            .collect::<Vec<i32>>();
+            .map(|(_, p)| p.id)
+            .collect::<Vec<i64>>();
 
         let url = format!("{}/projects/compatible", MCAtHomeAPI::BASE_URL);
         let body = GetProjectsForPlatformsRequest { platform_ids };
@@ -85,7 +85,7 @@ impl MCAtHomeAPI {
             };
 
             let platform = platforms
-                .get(&binary.platform_id.to_string())
+                .get(&binary.platform_id)
                 .expect("Platform not found");
 
             project.add_platform(ProjectPlatform::new(

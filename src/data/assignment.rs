@@ -1,6 +1,7 @@
 use crate::data::project::Project;
+use crate::manager::worker::ProjectWorker;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Assignment {
     pub id: i64,
     pub project: Project,
@@ -13,6 +14,12 @@ impl Assignment {
             id,
             project,
             input_data,
+        }
+    }
+
+    pub fn create_worker(&self) -> ProjectWorker {
+        ProjectWorker {
+            assignment: self.clone(),
         }
     }
 }

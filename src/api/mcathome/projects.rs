@@ -5,7 +5,7 @@ use crate::api::mcathome::platforms::BinaryInfo;
 #[derive(Debug, Serialize)]
 pub struct GetProjectsForPlatformsRequest {
     #[serde(rename = "PlatformsIDs")]
-    pub platform_ids: Vec<i32>,
+    pub platform_ids: Vec<i64>,
 }
 
 #[derive(Debug, Deserialize)]

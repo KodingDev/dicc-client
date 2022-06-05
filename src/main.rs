@@ -53,12 +53,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Find projects
     ts = Instant::now();
     info!("<green><bold>Fetching projects...</>");
-    let projects = api.get_projects_for_platforms(valid).await?;
+    let projects = api.get_projects_for_platforms(&valid).await?;
     info!("<green><bold>Found {} project(s) in {}ms.</>", projects.len(), ts.elapsed().as_millis());
 
     for project in &projects {
         info!("<bold>{} - {}</>", project.id, project.name);
-        for platform in &project.platforms {
+        for (_, platform) in &project.platforms {
             info!(" - <bright-black>{}</>", platform.platform.name);
         }
     }
@@ -68,7 +68,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let assignments = api.get_assignments(&projects).await?;
     info!("<green><bold>Assigned {} task(s) in {}ms.</>", assignments.len(), ts.elapsed().as_millis());
 
-    println!("{:#?}", assignments);
+    let platform_ids = valid.keys().cloned().collect::<Vec<i64>>();
+    for assignment in &assignments {
+        let worker = assignment.create_worker();
+        let output = worker.run(&platform_ids).await?;
+        println!("{}", output);
+    }
 
     Ok(())
 }
