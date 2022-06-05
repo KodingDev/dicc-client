@@ -8,6 +8,7 @@ use tokio::process::Command;
 use crate::data::assignment::{Assignment, AssignmentResult};
 use crate::data::project::{Project, ProjectPlatform};
 use crate::MCAtHomeAPI;
+use crate::util::file::set_executable;
 
 pub struct ProjectWorker {
     pub assignment: Assignment,
@@ -85,6 +86,8 @@ impl ProjectWorker {
 
         let path = dir.join(platform.binary.get_filename());
         platform.binary.download_to_file(&path).await.unwrap();
+        set_executable(&path).await;
+
         Ok(platform.binary.get_command(&path))
     }
 

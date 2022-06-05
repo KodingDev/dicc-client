@@ -1,6 +1,4 @@
 use std::{collections::HashMap, path::Path};
-#[cfg(not(target_os = "windows"))]
-use std::fs::Permissions;
 
 use simplelog::info;
 use tokio::{
@@ -8,6 +6,7 @@ use tokio::{
 };
 
 use crate::data::download::Download;
+use crate::util::file::set_executable;
 
 #[derive(Debug, Clone)]
 pub struct Platform {
@@ -68,7 +67,7 @@ impl PlatformManager {
                 .await
                 .expect("failed to download platform");
 
-            set_permissions(&path).await;
+            set_executable(&path).await;
             if platform.detect(&path).await.unwrap() {
                 platforms.insert(platform.id, platform.to_owned());
                 info!("{}: {}", platform.name, "<green>OK</>");
@@ -77,15 +76,5 @@ impl PlatformManager {
             }
         }
         platforms
-    }
-}
-
-#[allow(unused_variables)]
-pub async fn set_permissions(path: &Path) {
-    #[cfg(not(target_os = "windows"))]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let perms = Permissions::from_mode(0o755);
-        fs::set_permissions(path, perms).await.expect("failed to set permissions");
     }
 }

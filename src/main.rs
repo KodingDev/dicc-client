@@ -11,6 +11,7 @@ use crate::manager::worker::WorkerThread;
 pub mod api;
 pub mod data;
 pub mod manager;
+pub mod util;
 
 #[derive(Parser, Debug)]
 #[clap(author = "Koding", version = "0.1.0", about = "DICC Client")]
