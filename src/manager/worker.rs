@@ -34,7 +34,10 @@ impl WorkerThread {
     pub async fn run(&self) {
         info!("Starting worker thread #{}", self.id);
         loop {
-            self.run_loop().await.expect("Failed to run worker thread");
+            let result = self.run_loop().await;
+            if result.is_err() {
+                error!("Worker thread #{} failed: {}", self.id, result.unwrap_err());
+            }
         }
     }
 
@@ -92,8 +95,6 @@ impl ProjectWorker {
     }
 
     pub async fn prepare_input(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
-        info!("Preparing input for assignment {}", self.assignment.id);
-
         let dir = Path::new("projects")
             .join(&self.assignment.project.name)
             .join("inputs");
