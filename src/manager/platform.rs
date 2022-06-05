@@ -4,8 +4,7 @@ use std::fs::Permissions;
 
 use simplelog::info;
 use tokio::{
-    fs::{self},
-    process::Command,
+    fs::{self}
 };
 
 use crate::data::download::Download;
@@ -26,20 +25,8 @@ impl Platform {
         }
     }
 
-    fn get_command(&self, path: &Path) -> Command {
-        let mut command = Command::new(path);
-
-        if self.detector.get_filename().ends_with(".jar") {
-            command = Command::new("java");
-            command.arg("-jar");
-            command.arg(path);
-        }
-
-        command
-    }
-
     pub async fn detect(&self, path: &Path) -> Result<bool, Box<dyn std::error::Error>> {
-        let result = self.get_command(path).output().await;
+        let result = self.detector.get_command(path).output().await;
         if result.is_err() {
             return Ok(false);
         }

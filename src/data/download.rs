@@ -6,6 +6,7 @@ use tokio::{
     fs::File,
     io::{self, AsyncReadExt},
 };
+use tokio::process::Command;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Download {
@@ -57,9 +58,21 @@ impl Download {
         false
     }
 
-    pub fn get_filename(&self) -> String {
+    fn get_filename(&self) -> String {
         let mut url = self.url.clone();
         url.split_off(url.rfind('/').unwrap() + 1)
+    }
+
+    pub fn get_command(&self, path: &Path) -> Command {
+        let mut command = Command::new(path);
+
+        if self.get_filename().ends_with(".jar") {
+            command = Command::new("java");
+            command.arg("-jar");
+            command.arg(path);
+        }
+
+        command
     }
 
     pub async fn download(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
