@@ -11,7 +11,8 @@ use crate::api::mcathome::assignments::{RetrieveTaskOfProjectsRequest, RetrieveT
 use crate::api::mcathome::projects::{
     GetProjectsForPlatformsRequest, GetProjectsForPlatformsResponse,
 };
-use crate::data::assignment::Assignment;
+use crate::api::mcathome::results::{SubmitResultRequest, SubmitResultResponse};
+use crate::data::assignment::{Assignment, AssignmentResult};
 use crate::data::project::{Project, ProjectPlatform};
 
 pub struct MCAtHomeAPI {
@@ -133,5 +134,28 @@ impl MCAtHomeAPI {
             .collect::<Vec<Assignment>>();
 
         Ok(assignments)
+    }
+
+    pub async fn submit_result(&self, result: &AssignmentResult) -> Result<SubmitResultResponse, Error> {
+        let url = format!("{}/results/submit", MCAtHomeAPI::BASE_URL);
+        let body = SubmitResultRequest {
+            execution_time: result.execution_time,
+            assignment_id: result.id,
+            std_err: result.error.to_string(),
+            std_out: result.output.to_string(),
+            exit_code: result.status as i64,
+        };
+
+        Ok(
+            self
+                .client
+                .post(&url)
+                .header("Authorization", self.api_key.to_string())
+                .json(&body)
+                .send()
+                .await?
+                .json::<SubmitResultResponse>()
+                .await?
+        )
     }
 }

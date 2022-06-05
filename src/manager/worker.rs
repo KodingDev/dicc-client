@@ -4,7 +4,7 @@ use simplelog::{error, info};
 use tokio::fs;
 use tokio::process::Command;
 
-use crate::data::assignment::Assignment;
+use crate::data::assignment::{Assignment, AssignmentResult};
 use crate::data::project::ProjectPlatform;
 
 pub struct ProjectWorker {
@@ -42,7 +42,7 @@ impl ProjectWorker {
     }
 
     pub async fn prepare_input(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
-        info!("preparing input for assignment {}", self.assignment.id);
+        info!("Preparing input for assignment {}", self.assignment.id);
 
         let dir = Path::new("projects")
             .join(&self.assignment.project.name)
@@ -59,8 +59,8 @@ impl ProjectWorker {
         Ok(path)
     }
 
-    pub async fn run(&self, platform_ids: &Vec<i64>) -> Result<String, Box<dyn std::error::Error>> {
-        info!("running assignment {}", self.assignment.id);
+    pub async fn run(&self, platform_ids: &Vec<i64>) -> Result<AssignmentResult, Box<dyn std::error::Error>> {
+        info!("Running assignment {}", self.assignment.id);
         let platform = self.get_platform(platform_ids)?;
         let mut command = self.prepare_binary(platform).await?;
         let input_path = self.prepare_input().await?;
@@ -68,10 +68,17 @@ impl ProjectWorker {
         command.arg("--input");
         command.arg(&input_path.canonicalize()?.to_str().unwrap());
 
+        let start = std::time::Instant::now();
         let output = command.output().await?;
         if output.status.success() {
-            info!("assignment {} finished successfully", self.assignment.id);
-            Ok(String::from_utf8(output.stdout)?)
+            info!("Assignment {} finished successfully", self.assignment.id);
+            Ok(AssignmentResult::new(
+                self.assignment.id,
+                String::from_utf8(output.stdout)?,
+                String::from_utf8(output.stderr)?,
+                output.status.code().unwrap(),
+                start.elapsed().as_nanos()
+            ))
         } else {
             error!("assignment {} failed", self.assignment.id);
             Err(Box::new(std::io::Error::new(

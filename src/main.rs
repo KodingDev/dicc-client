@@ -72,7 +72,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for assignment in &assignments {
         let worker = assignment.create_worker();
         let output = worker.run(&platform_ids).await?;
-        println!("{}", output);
+        api.submit_result(&output).await?;
+        info!("<green><bold>Submitted result for assignment {}.</>", assignment.id);
     }
 
     Ok(())
