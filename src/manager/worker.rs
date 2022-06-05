@@ -37,6 +37,7 @@ impl WorkerThread {
             let result = self.run_loop().await;
             if result.is_err() {
                 error!("Worker thread #{} failed: {}", self.id, result.unwrap_err());
+                tokio::time::sleep(Duration::from_secs(60)).await;
             }
         }
     }
