@@ -15,6 +15,7 @@ use crate::api::mcathome::results::{SubmitResultRequest, SubmitResultResponse};
 use crate::data::assignment::{Assignment, AssignmentResult};
 use crate::data::project::{Project, ProjectPlatform};
 
+#[derive(Debug, Clone)]
 pub struct MCAtHomeAPI {
     client: reqwest::Client,
     api_key: String,

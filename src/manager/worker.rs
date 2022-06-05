@@ -1,14 +1,61 @@
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use simplelog::{error, info};
 use tokio::fs;
 use tokio::process::Command;
 
 use crate::data::assignment::{Assignment, AssignmentResult};
-use crate::data::project::ProjectPlatform;
+use crate::data::project::{Project, ProjectPlatform};
+use crate::MCAtHomeAPI;
 
 pub struct ProjectWorker {
     pub assignment: Assignment,
+}
+
+pub struct WorkerThread {
+    pub id: i32,
+    pub api: MCAtHomeAPI,
+    pub projects: Vec<Project>,
+    pub platform_ids: Vec<i64>,
+}
+
+impl WorkerThread {
+    pub fn new(id: i32, api: &MCAtHomeAPI, projects: &Vec<Project>, platform_ids: &Vec<i64>) -> WorkerThread {
+        WorkerThread {
+            id,
+            api: api.clone(),
+            projects: projects.clone(),
+            platform_ids: platform_ids.clone(),
+        }
+    }
+
+    pub async fn run(&self) {
+        info!("Starting worker thread #{}", self.id);
+        loop {
+            self.run_loop().await.expect("Failed to run worker thread");
+        }
+    }
+
+    async fn run_loop(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let ts = Instant::now();
+        let assignments = self.api.get_assignments(&self.projects).await?;
+        info!("<green><bold>Assigned {} task(s) in {}ms.</>", assignments.len(), ts.elapsed().as_millis());
+
+        if assignments.len() == 0 {
+            info!("<red><bold>No tasks to do. Sleeping for 1 minute.</>");
+            tokio::time::sleep(Duration::from_secs(60)).await;
+            return Ok(());
+        }
+
+        for assignment in &assignments {
+            let worker = assignment.create_worker();
+            let output = worker.run(&self.platform_ids).await?;
+            self.api.submit_result(&output).await?;
+            info!("<green><bold>Submitted result for assignment {}.</>", assignment.id);
+        }
+        Ok(())
+    }
 }
 
 impl ProjectWorker {
@@ -68,7 +115,7 @@ impl ProjectWorker {
         command.arg("--input");
         command.arg(&input_path.canonicalize()?.to_str().unwrap());
 
-        let start = std::time::Instant::now();
+        let start = Instant::now();
         let output = command.output().await?;
         if output.status.success() {
             info!("Assignment {} finished successfully", self.assignment.id);
@@ -77,7 +124,7 @@ impl ProjectWorker {
                 String::from_utf8(output.stdout)?,
                 String::from_utf8(output.stderr)?,
                 output.status.code().unwrap(),
-                start.elapsed().as_nanos()
+                start.elapsed().as_nanos(),
             ))
         } else {
             error!("assignment {} failed", self.assignment.id);

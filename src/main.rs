@@ -1,8 +1,12 @@
+use std::thread;
+use std::time::Duration;
+
 use clap::Parser;
 use simplelog::{ColorChoice, Config, info, TerminalMode, TermLogger};
 use tokio::time::Instant;
 
 use crate::api::mcathome::api::MCAtHomeAPI;
+use crate::manager::worker::WorkerThread;
 
 pub mod api;
 pub mod data;
@@ -14,6 +18,10 @@ struct Opts {
     /// Minecraft@Home API key
     #[clap(short, long)]
     api_key: String,
+
+    /// Worker count
+    #[clap(short, long, default_value_t = 0)]
+    workers: usize,
 }
 
 #[tokio::main]
@@ -27,11 +35,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Parse command line arguments
-    let opts = Opts::parse();
+    let mut opts = Opts::parse();
+
+    if opts.workers == 0 {
+        opts.workers = num_cpus::get() / 2;
+    }
 
     info!("");
     info!("<bold><blue>DICC Client</>");
     info!("<bold><blue>Version: 0.1.0</>");
+    info!("<bold><blue>Using {} workers</>", opts.workers);
     info!("");
 
     // Fetch platforms
@@ -47,13 +60,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut ts = Instant::now();
     info!("<green><bold>Detecting platforms...</>");
 
-    let valid = manager.detect().await;
-    info!("<green><bold>Detected in {}ms. Found {} platform(s).</>", ts.elapsed().as_millis(), valid.len());
+    let valid_platforms = manager.detect().await;
+    info!("<green><bold>Detected in {}ms. Found {} platform(s).</>", ts.elapsed().as_millis(), valid_platforms.len());
 
     // Find projects
     ts = Instant::now();
     info!("<green><bold>Fetching projects...</>");
-    let projects = api.get_projects_for_platforms(&valid).await?;
+    let projects = api.get_projects_for_platforms(&valid_platforms).await?;
     info!("<green><bold>Found {} project(s) in {}ms.</>", projects.len(), ts.elapsed().as_millis());
 
     for project in &projects {
@@ -63,18 +76,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    ts = Instant::now();
-    info!("<green><bold>Assigning tasks...</>");
-    let assignments = api.get_assignments(&projects).await?;
-    info!("<green><bold>Assigned {} task(s) in {}ms.</>", assignments.len(), ts.elapsed().as_millis());
+    info!("<green><bold>Creating threads...</>");
+    let platform_ids = valid_platforms.keys().cloned().collect::<Vec<i64>>();
 
-    let platform_ids = valid.keys().cloned().collect::<Vec<i64>>();
-    for assignment in &assignments {
-        let worker = assignment.create_worker();
-        let output = worker.run(&platform_ids).await?;
-        api.submit_result(&output).await?;
-        info!("<green><bold>Submitted result for assignment {}.</>", assignment.id);
+    for i in 0..opts.workers {
+        let worker = WorkerThread::new(i as i32, &api, &projects, &platform_ids);
+        thread::spawn(move || {
+            let runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
+            runtime.block_on(worker.run());
+        });
     }
 
-    Ok(())
+    loop {
+        thread::sleep(Duration::from_secs(1));
+    }
 }
