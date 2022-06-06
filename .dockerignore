@@ -1,0 +1,7 @@
+.github/
+.vscode/
+run/
+target/
+.gitignore
+.dockerignore
+Dockerfile
