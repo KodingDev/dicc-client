@@ -103,11 +103,12 @@ RUN cargo install --path . --target x86_64-unknown-linux-musl
 FROM alpine
 
 WORKDIR /client
-COPY --from=build /usr/local/cargo/bin/dicc-client .
+COPY --from=build /root/.cargo/bin/dicc-client .
+RUN chown 1000:1000 /client -R
 USER 1000
 
 # Define arguments for the application.
 ENV API_KEY=34956AE83522F004DEE6BB75256D61818008D1E386B8BF03104977FB9A753BBE
 ENV WORKERS=0
 
-CMD ["./dicc-client", "--api-key", "$API_KEY", "--workers", "$WORKERS"]
+CMD ["sh", "-c", "./dicc-client --api-key $API_KEY --workers $WORKERS"]
